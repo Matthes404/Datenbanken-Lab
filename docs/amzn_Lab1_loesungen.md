@@ -135,46 +135,63 @@ Hier sieht man nocheinmal, dass dann vier Worker verwendet werden. Das führt in
 
 ## Lasttests
 
-| Testbedingungen        | Ergebnis / Bemerkung             |
-|------------------------|----------------------------------|
-| 10 User, 30 Sekunden   | TODO: Ergebnisse eintragen |
-| 300 User, 60 Sekunden  | TODO: Ergebnisse eintragen |
-| Mit analytischer Abfrage | TODO: Ergebnisse eintragen |
+Lasttest bei 10 Usern, 30 Sekunden
 
----
+| Type           | Name                 | Requests | Fails | Median (ms) | 95%ile (ms) | 99%ile (ms) | Average (ms) | Min (ms)  | Max (ms) | Avg. Size (bytes) | Current RPS | Failures/s |
+| -------------- | -------------------- | -------- | ----- | ----------- | ----------- | ----------- | ------------ | --------- | -------- | ----------------- | ----------- | ---------- |
+| transaction    | select_customer      | 697      | 0     | 2           | 3           | 3           | 1.63         | 0         | 9        | 0                 | 30.3        | 0          |
+| transaction    | select_order         | 660      | 0     | 2           | 3           | 3           | 0.01         | -1309     | 9        | 0                 | 28.8        | 0          |
+| transaction    | select_product_stats | 668      | 0     | 7           | 9           | 12          | 6.23         | 2         | 22       | 0                 | 27.2        | 0          |
+| transaction    | update_customer      | 705      | 0     | 4           | 6           | 7           | 3.99         | 1         | 11       | 0                 | 27.1        | 0          |
+| **Aggregated** | —                    | **2730** | **0** | **3**       | **8**       | **10**      | **2.97**     | **-1309** | **22**   | **0**             | **113.4**   | **0**      |
 
-## Fehlende bzw. unklare Informationen für Nachvollziehbarkeit
+Lasttest bei 300 Usern, 60 Sekunden
 
-### 1. Datenbankumgebung
-- DB-System: TODO (z. B. PostgreSQL 15 / MySQL 8 / MariaDB 10.11)  
-- Systemumgebung: TODO (lokal / Docker / Cloud)  
-- Hardware: TODO (CPU, RAM, Speicher)  
-- Betriebssystem: TODO (Linux / Windows / macOS)
+| Type           | Name                 | Requests   | Fails | Median (ms) | 95%ile (ms) | 99%ile (ms) | Average (ms) | Min (ms)  | Max (ms) | Avg. Size (bytes) | Current RPS | Failures/s |
+| -------------- | -------------------- | ---------- | ----- | ----------- | ----------- | ----------- | ------------ | --------- | -------- | ----------------- | ----------- | ---------- |
+| transaction    | select_customer      | 8571       | 0     | 2           | 7           | 16          | 2.05         | -1330     | 41       | 0                 | 298.8       | 0          |
+| transaction    | select_order         | 8308       | 0     | 2           | 7           | 17          | 2.53         | -498      | 42       | 0                 | 298.8       | 0          |
+| transaction    | select_product_stats | 8329       | 0     | 6           | 14          | 22          | 5.93         | -1327     | 72       | 0                 | 280.1       | 0          |
+| transaction    | update_customer      | 8347       | 0     | 4           | 9           | 19          | 3.87         | -1316     | 71       | 0                 | 290.8       | 0          |
+| **Aggregated** | —                    | **33 555** | **0** | **3**       | **10**      | **19**      | **3.59**     | **-1330** | **72**   | **0**             | **1168.5**  | **0**      |
 
-### 2. Tabellenstrukturen
-- TODO: CREATE TABLE-Befehle und Datentypen ergänzen  
-- TODO: Primär- und Fremdschlüsseldefinitionen hinzufügen
+Lasttest mit analytischer Abfrage, 20 User, 120 Sekunden
 
-### 3. Testdaten
-- TODO: Anzahl Datensätze pro Tabelle  
-- TODO: Quelle (real / generiert / Dummy)  
-- TODO: Beispielzeilen einfügen
+| Type           | Name                            | Requests | Fails  | Median (ms) | 95%ile (ms) | 99%ile (ms) | Average (ms) | Min (ms) | Max (ms)  | Avg. Size (bytes) | Current RPS | Failures/s |
+| -------------- | ------------------------------- | -------- | ------ | ----------- | ----------- | ----------- | ------------ | -------- | --------- | ----------------- | ----------- | ---------- |
+| transaction    | select_category_stats           | 3        | 0      | 11000       | 13000       | 13000       | 11640.67     | 10681    | 13084     | 0                 | 0           | 0          |
+| transaction    | select_category_stats (failure) | 13       | 13     | 410         | 520         | 520         | 385.23       | 212      | 524       | 0                 | 0.5         | 0.5        |
+| transaction    | select_customer                 | 526      | 0      | 1           | 2           | 4           | 0.70         | 0        | 12        | 0                 | 17.3        | 0          |
+| transaction    | select_order                    | 541      | 0      | 1           | 2           | 5           | 1.07         | 0        | 10        | 0                 | 18.2        | 0          |
+| transaction    | select_product_stats            | 524      | 0      | 4           | 8           | 12          | 4.17         | 2        | 19        | 0                 | 19.5        | 0          |
+| transaction    | update_customer                 | 560      | 0      | 2           | 6           | 11          | 2.31         | 1        | 17        | 0                 | 21.3        | 0          |
+| **Aggregated** | —                               | **2167** | **13** | **1**       | **6**       | **14**      | **20.47**    | **0**    | **13084** | **0**             | **76.8**    | **0.5**    |
 
-### 4. Messmethodik
-- TODO: Wie wurde Execution Time gemessen (EXPLAIN ANALYZE / Benchmark-Tool)?  
-- TODO: Was bedeuten die „Kosten“ (Planner Estimate oder reale Messung)?
+Ohne Analytische Abfrage 20 User, 120 Sekunden
 
-### 5. Lasttest
-- TODO: Verwendetes Tool (z. B. JMeter, pgbench)  
-- TODO: Erfasste Metriken (Response-Zeit, Throughput, CPU-Auslastung)  
-- TODO: Diagramme oder Tabellen einfügen
+| Type           | Name                 | Requests | Fails | Median (ms) | 95%ile (ms) | 99%ile (ms) | Average (ms) | Min (ms) | Max (ms) | Avg. Size (bytes) | Current RPS | Failures/s |
+| -------------- | -------------------- | -------- | ----- | ----------- | ----------- | ----------- | ------------ | -------- | -------- | ----------------- | ----------- | ---------- |
+| transaction    | select_customer      | 554      | 0     | 0           | 3           | 9           | -0.71        | -878     | 40       | 0                 | 3.5         | 0          |
+| transaction    | select_order         | 534      | 0     | 720         | 1800        | 2100        | 815.09       | -971     | 2192     | 0                 | 4.1         | 0          |
+| transaction    | select_product_stats | 546      | 0     | 2900        | 3600        | 3800        | 2765.35      | 214      | 4202     | 0                 | 4.6         | 0          |
+| transaction    | update_customer      | 586      | 0     | 2           | 15          | 21          | 2.90         | -878     | 28       | 0                 | 5.3         | 0          |
+| **Aggregated** | —                    | **2220** | **0** | **14**      | **3300**    | **3700**    | **876.78**   | **-971** | **4202** | **0**             | **17.5**    | **0**      |
 
-### 6. Parallelisierung
-- TODO: Nachweis, dass Query tatsächlich parallel lief (EXPLAIN-Plan)  
-- TODO: Vergleichswerte mit Standardkonfiguration einfügen
+- Ohne analytische Abfrage keine Fehler, mit analytischer Abfrage 13 Fehlversuche bei select_category_stats.
 
----
+- Die analytische Abfrage ist sehr langsam (11–13 s), alle anderen Queries liegen im Millisekundenbereich.
 
-## Fazit (optional)
+- Mit analytischer Abfrage höherer Gesamtdurchsatz (~77 RPS vs. ~18 RPS), da einfache Abfragen überwiegen.
 
-TODO: Kurze Zusammenfassung der wichtigsten Erkenntnisse (z. B. welche Optimierungen den größten Effekt hatten)
+- Die analytische Abfrage verursacht Lastspitzen und vereinzelt Timeouts.
+
+- select_category_stats sollte optimiert oder ausgelagert werden (z. B. Materialized View oder Preaggregation).
+
+## Vergleich mit DuckDB
+
+| Datenbank-System | Typ der Abfrage      | Ausführungszeit (s) |
+| ---------------- | -------------------- | -------------------- |
+| DuckDB           | Operationale Abfrage | 1.48                    |
+| DuckDB           | Analytische Abfrage  | 1.5                    |
+| PostgreSQL       | Operationale Abfrage | 0,000132                    |
+| PostgreSQL       | Analytische Abfrage  | 8,354037                    |
