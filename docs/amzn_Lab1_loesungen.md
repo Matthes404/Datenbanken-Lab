@@ -91,6 +91,12 @@ GROUP BY products.category;
 
 ### Optimierung / Performance
 
+~~~sql
+CREATE INDEX idx_op_product_order_cover
+  ON order_positions (product_id, order_id)
+  INCLUDE (quantity, buying_price);
+~~~
+
 - Keine weiteren sinnvollen Indizes (FK-Indizes bereits vorhanden)  
 - Stattdessen wurden folgende Einstellungen angepasst:  
   SET max_parallel_workers_per_gather = 4;  
