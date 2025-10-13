@@ -1,0 +1,47 @@
+services:
+  import:
+    build: import
+    env_file: [.env]
+    environment:
+      SCENARIO:                 # if empty, value is taken from .env; possible values: abnb, amzn, spot, uber
+      CREATE_TABLES: true       # if true, tables are dropped and created
+      COPY_DATA: true           # if true, data is copied from csv files into tables
+    depends_on:
+      postgres:
+        condition: service_healthy
+  postgres:
+    image: postgres
+    volumes:
+      - ./import/data:/data
+    env_file: [.env]
+    command: postgres -c shared_buffers=1024MB -c max_wal_size=2048
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 1s
+  duckdb:
+    build: duckdb
+    environment:
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB}
+      PGHOST: ${POSTGRES_HOST}
+    command: ./duckdb -init ${SCENARIO}/import.sql
+    tty: true # keep alive
+    depends_on:
+      import:
+        condition: service_completed_successfully
+  locust:
+    build: locust
+    env_file: [.env]
+    ports: [8089:8089]
+    command: -f ./${SCENARIO}/locustfile.py -H localhost -u 10 -r 2 -t 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+  k6:
+    build: k6
+    env_file: [.env]
+    command: sleep infinity # keep alive
+    depends_on:
+      postgres:
+        condition: service_healthy
