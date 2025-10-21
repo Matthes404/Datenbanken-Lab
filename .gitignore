@@ -1,0 +1,91 @@
+# ============================================
+#  Node / NestJS / TypeScript
+# ============================================
+
+# Node modules & build outputs
+node_modules/
+dist/
+build/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Logs & temp files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.log
+logs/
+.tmp/
+temp/
+
+# ============================================
+#  Environment & configuration
+# ============================================
+
+# Local environment files (never commit passwords or DB creds)
+.env
+.env.*
+!.env.example   # keep an example for reference
+
+# IDE settings
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ============================================
+#  Docker
+# ============================================
+
+# Volume data & import folders
+import/data/
+postgres-data/
+docker-compose.override.yml
+
+# Docker build artifacts
+*.pid
+*.seed
+*.db
+*.dump
+*.tar
+*.sql
+
+# ============================================
+#  OS / Editor generated files
+# ============================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# ============================================
+#  Testing / Coverage
+# ============================================
+
+coverage/
+*.lcov
+.nyc_output/
+jest-cache/
+jest-stare/
+
+# ============================================
+#  Misc
+# ============================================
+
+# Generated GraphQL schema
+src/schema.gql
+
+# Local scripts / dev tools
+scripts/local/
