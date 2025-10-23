@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 import { Customer } from './customer.entity';
 import { OrderPosition } from './order-position.entity';
 
@@ -8,10 +8,15 @@ export class Order {
   id: number;
 
   @Column({ type: 'timestamp', nullable: true })
-  orderDate: Date;
+  order_date: Date;
 
-  @ManyToOne(() => Customer, (customer) => customer.orders, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Customer, (customer) => customer.orders, { 
+    onDelete: 'CASCADE',
+    nullable: true,
+  })
+  @JoinColumn({ name: 'customer_id' })
   customer: Customer;
+
 
   @OneToMany(() => OrderPosition, (op) => op.order)
   positions: OrderPosition[];

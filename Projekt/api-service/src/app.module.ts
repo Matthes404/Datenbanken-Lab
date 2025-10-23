@@ -29,7 +29,7 @@ import { OrderModule } from './order/order.module';
         password: configService.get<string>('DB_PASS'),
         database: configService.get<string>('DB_NAME'),
         entities: [Customer, Order, Product, OrderPosition],
-        synchronize: true,
+        synchronize: false,
       }),
     }),
     OrderModule,

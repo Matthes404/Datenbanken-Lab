@@ -20,14 +20,14 @@ services:
       interval: 1s
     ports:
       - "5432:5432"
-  api:
-    build: ./api-service
-    container_name: amzn-api
-    env_file: [.env]
-    depends_on:
-      - postgres
-    ports:
-      - "3000:3000"
+#  api:
+#    build: ./api-service
+#    container_name: amzn-api
+#    env_file: [.env]
+#    depends_on:
+#      - postgres
+#    ports:
+#      - "3000:3000"
   duckdb:
     build: duckdb
     environment:

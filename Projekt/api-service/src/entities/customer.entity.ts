@@ -2,12 +2,11 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { Order } from './order.entity';
 
 export enum Gender {
-  MALE = 'MALE',
-  FEMALE = 'FEMALE',
-  OTHER = 'OTHER'
+  MALE = 'm',
+  FEMALE = 'f',
 }
 
-@Entity()
+@Entity('customers')
 export class Customer {
   @PrimaryGeneratedColumn()
   id: number;
@@ -18,6 +17,8 @@ export class Customer {
   @Column({ type: 'enum', enum: Gender })
   gender: Gender;
 
-  @OneToMany(() => Order, (order) => order.customer)
+  @OneToMany(() => Order, (order) => order.customer, {
+    nullable: true,
+  })
   orders: Order[];
 }

@@ -1,10 +1,10 @@
 import { Entity, PrimaryColumn, Column, OneToMany } from 'typeorm';
 import { OrderPosition } from './order-position.entity';
 
-@Entity()
+@Entity('products')
 export class Product {
-  @PrimaryColumn()
-  id: string; // product id is string according to your model
+  @PrimaryColumn('varchar')
+  id: string;
 
   @Column()
   title: string;
@@ -16,8 +16,10 @@ export class Product {
   price: number;
 
   @Column('int')
-  inStock: number;
+  in_stock: number;
 
-  @OneToMany(() => OrderPosition, (op) => op.product)
+  @OneToMany(() => OrderPosition, (op) => op.product, {
+    nullable: true,
+  })
   positions: OrderPosition[];
 }
