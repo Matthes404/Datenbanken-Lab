@@ -1,0 +1,10 @@
+PUT http://localhost:3000/products/zfdoss
+Content-Type: application/json
+ 
+ {
+   "id": "zfdoss",  
+   "title": "testtest",     
+   "category": "accessories",
+   "price": "12.49",
+   "in_stock": 15
+ } 

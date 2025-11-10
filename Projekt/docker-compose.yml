@@ -4,8 +4,8 @@ services:
     env_file: [.env]
     environment:
       SCENARIO:                 # if empty, value is taken from .env; possible values: abnb, amzn, spot, uber
-      CREATE_TABLES: true       # if true, tables are dropped and created
-      COPY_DATA: true           # if true, data is copied from csv files into tables
+      CREATE_TABLES: false       # if true, tables are dropped and created
+      COPY_DATA: false           # if true, data is copied from csv files into tables
     depends_on:
       postgres:
         condition: service_healthy

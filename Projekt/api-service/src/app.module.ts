@@ -10,6 +10,8 @@ import { Order } from './entities/order.entity';
 import { Product } from './entities/product.entity';
 import { OrderPosition } from './entities/order-position.entity';
 import { OrderModule } from './order/order.module';
+import { ProductModule } from './product/product.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -33,6 +35,8 @@ import { OrderModule } from './order/order.module';
       }),
     }),
     OrderModule,
+    ProductModule,
+    AnalyticsModule,
 
   ],
 })
