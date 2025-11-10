@@ -29,5 +29,5 @@ CREATE TABLE order_positions (
   quantity INT NOT NULL DEFAULT 1 CHECK (quantity >= 1),
   buying_price DECIMAL(7,2) NOT NULL CHECK (buying_price >= 0),
   CONSTRAINT fk_op_order_id FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
-  CONSTRAINT fk_op_product_id FOREIGN KEY (product_id) REFERENCES products(id)
+  CONSTRAINT fk_op_product_id FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
