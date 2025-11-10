@@ -97,6 +97,10 @@ CREATE INDEX idx_op_product_order_cover
   INCLUDE (quantity, buying_price);
 ~~~
 
+~~~sql
+CREATE INDEX idx_analytics
+  ON products ()
+
 - Keine weiteren sinnvollen Indizes (FK-Indizes bereits vorhanden)  
 - Stattdessen wurden folgende Einstellungen angepasst:  
   SET max_parallel_workers_per_gather = 4;  

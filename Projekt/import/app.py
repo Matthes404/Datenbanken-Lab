@@ -38,6 +38,13 @@ async def main():
                     if stmt and not stmt.startswith("--"):
                         log.info("Run: {0}".format(stmt))
                         await conn.execute(stmt)
+        if enabled("CREATE_IDX", True):
+            with open("data/{0}/3_create_index.sql".format(scenario), "r") as file:
+                for line in file:
+                    stmt = line.strip()
+                    if stmt and not stmt.startswith("--"):
+                        log.info("Run: {0}".format(stmt))
+                        await conn.execute(stmt)
             log.info("Import completed.")
     finally:
         await conn.close()
