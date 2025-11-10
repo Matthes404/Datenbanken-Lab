@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Product } from '../entities/product.entity';
@@ -7,27 +7,34 @@ import { Product } from '../entities/product.entity';
 export class ProductService {
   constructor(
     @InjectRepository(Product)
-    private readonly productRepo: Repository<Product>,
+    private productRepo: Repository<Product>,
   ) {}
 
-  async findOne(id: string): Promise<Product | null> {
-    return this.productRepo.findOne({ where: { id } });
-  }
-
-  async update(id: string, data: Partial<Product>): Promise<Product> {
-    const product = await this.findOne(id);
+  async findOne(id: string) {
+    const product = await this.productRepo.findOne({ where: { id } });
     if (!product) {
-      throw new NotFoundException(`Product with id '${id}' not found`);
+      throw new NotFoundException(`Product with id "${id}" not found`);
     }
-
-    const updated = this.productRepo.merge(product, data);
-    return this.productRepo.save(updated);
+    return product;
   }
 
-  async delete(id: string): Promise<void> {
-    const res = await this.productRepo.delete(id);
-    if (res.affected === 0) {
-      throw new NotFoundException(`Product with id '${id}' not found`);
+  async update(id: string, data: Partial<Product>) {
+    const result = await this.productRepo.update(id, data);
+    if (result.affected === 0) {
+      throw new NotFoundException(`Product with id "${id}" not found`);
+    }
+    return this.findOne(id);
+  }
+
+  async delete(id: string) {
+    try {
+      const result = await this.productRepo.delete(id);
+      if (result.affected === 0) {
+        throw new NotFoundException(`Product with id "${id}" not found`);
+      }
+      return { message: `Product with id "${id}" deleted successfully` };
+    } catch (error) {
+      throw new InternalServerErrorException(error.message);
     }
   }
 }
