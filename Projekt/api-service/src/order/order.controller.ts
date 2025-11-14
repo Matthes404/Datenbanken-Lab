@@ -1,5 +1,17 @@
-import { Controller, Get, Post, Patch, Param, Body, Query, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Param,
+  Body,
+  Query,
+  ParseIntPipe,
+  ValidationPipe,
+} from '@nestjs/common';
 import { OrderService } from './order.service';
+import { GetOrdersQueryDto } from './dto/get-orders-query.dto';
+import { CreateOrderDto } from './dto/create-order.dto';
 
 @Controller('orders')
 export class OrderController {
@@ -7,8 +19,11 @@ export class OrderController {
 
   // REST Route 2 GET filtered, max 10
   @Get()
-  getAll(@Query('limit') limit?: number) {
-    return this.service.findAll(limit ?? 10);
+  getAll(
+    @Query(new ValidationPipe({ transform: true, whitelist: true }))
+    query: GetOrdersQueryDto,
+  ) {
+    return this.service.findAll(query);
   }
 
   // REST Route 1 GET by id
@@ -19,7 +34,10 @@ export class OrderController {
 
   // REST Route 2 POST new
   @Post()
-  create(@Body() dto: any) {
+  create(
+    @Body(new ValidationPipe({ transform: true, whitelist: true }))
+    dto: CreateOrderDto,
+  ) {
     return this.service.create(dto);
   }
 
