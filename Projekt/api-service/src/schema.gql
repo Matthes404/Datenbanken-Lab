@@ -2,11 +2,47 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-type User {
-  id: Float!
+type Product {
+  id: ID!
+  title: String!
+  category: String!
+  price: Int!
+  in_stock: Int!
+  positions: [OrderPosition!]
+}
+
+type OrderPosition {
+  id: ID!
+  quantity: Int!
+  buying_price: Int!
+  order: Order!
+  product: Product
+}
+
+type Order {
+  id: ID!
+  order_date: DateTime!
+  customer: Customer!
+  positions: [OrderPosition!]
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type Customer {
+  id: ID!
   name: String!
+  gender: Gender!
+  orders: [Order!]
+}
+
+enum Gender {
+  MALE
+  FEMALE
 }
 
 type Query {
-  user: User!
+  order(id: Int!): Order
 }

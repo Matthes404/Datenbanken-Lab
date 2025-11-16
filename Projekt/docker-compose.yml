@@ -6,7 +6,7 @@ services:
       SCENARIO:                 # if empty, value is taken from .env; possible values: abnb, amzn, spot, uber
       CREATE_TABLES: false       # if true, tables are dropped and created
       COPY_DATA: false           # if true, data is copied from csv files into tables
-      CREATE_IDX: true          # if true, idx and materialized view are created
+      CREATE_IDX: false          # if true, idx and materialized view are created
     depends_on:
       postgres:
         condition: service_healthy

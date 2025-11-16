@@ -5,11 +5,12 @@ import { OrderService } from './order.service';
 import { OrderController } from './order.controller';
 import { OrderEventsListener } from './order-events.listener';
 import { Product } from '../entities/product.entity';
+import { OrderResolver } from './order.resolver';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Order, Product])],
   controllers: [OrderController],
-  providers: [OrderService, OrderEventsListener],
+  providers: [OrderService, OrderEventsListener, OrderResolver],
   exports: [OrderService],
 })
 export class OrderModule {}
