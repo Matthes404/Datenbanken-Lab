@@ -74,6 +74,7 @@ export class OrderService {
   }
 
   async create(dto: CreateOrderDto) {
+    // Ab hier Transaktion zum erstellen ".transaction..."
     return this.repo.manager.transaction(async (manager) => {
       const orderRepository = manager.getRepository(Order);
       const positionRepository = manager.getRepository(OrderPosition);
@@ -103,7 +104,7 @@ export class OrderService {
   }
 
   async createFromStream(dto: StreamOrderDto) {
-    const positions = await Promise.all(
+    const positions = await Promise.all( // Promise.all sorgt dafür, dass alle Produkt-Lookups parallel laufen
       dto.positions.map(async (incoming) => {
         const product = await this.productRepo.findOne({
           where: { title: incoming.product_title },

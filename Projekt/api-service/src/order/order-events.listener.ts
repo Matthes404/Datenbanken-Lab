@@ -63,6 +63,8 @@ export class OrderEventsListener implements OnModuleInit, OnModuleDestroy {
     });
 
     this.socket.on('message', (message) => {
+      // Verarbeitung von Payloads getrennt, aber nicht blockierendend
+      // void -> Wir warten nicht auf Rückgabewert.
       void this.handleMessage(message.toString());
     });
 
@@ -107,6 +109,8 @@ export class OrderEventsListener implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+
+  // Überprüfung, ob Nachricht valide ist
   private async handleMessage(payload: string) {
     try {
       const parsed = JSON.parse(payload);
