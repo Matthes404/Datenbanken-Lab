@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { Order } from './order.entity';
 import { Product } from './product.entity';
-import { ObjectType, Field, ID, Int } from '@nestjs/graphql';
+import { ObjectType, Field, ID, Int, Float } from '@nestjs/graphql';
 
 @ObjectType()
 @Entity('order_positions')
@@ -14,8 +14,11 @@ export class OrderPosition {
   @Column('int')
   quantity: number;
 
-  @Field(() => Int)
-  @Column('int')
+  @Field(() => Float)
+  @Column({ type: 'decimal', precision: 10, scale: 2, transformer: {
+    to: (value?: number) => value,                
+    from: (value: string) => (value === null ? null : parseFloat(value)),
+  } })
   buying_price: number;
 
   @Field(() => Order)
