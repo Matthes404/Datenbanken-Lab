@@ -1,5 +1,7 @@
 FROM locustio/locust:latest
 
-COPY . .
+WORKDIR /app
 
 RUN pip install "psycopg[binary]"
+
+COPY . .
