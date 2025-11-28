@@ -1,23 +1,36 @@
 services:
+  mongo-import:
+    build:
+      context: import
+      dockerfile: Dockerfile.mongo
+    env_file: [.env]
+    environment:
+      MONGODB_URI: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongodb:27017/ndbk?authSource=admin
+      SCENARIO: ${SCENARIO}
+    volumes:
+      - ./import/data:/data:ro
+    depends_on:
+      mongodb:
+        condition: service_healthy
   import:
     build: import
     env_file: [.env]
     environment:
       SCENARIO:                 # if empty, value is taken from .env; possible values: abnb, amzn, spot, uber
-      CREATE_TABLES: false       # if true, tables are dropped and created
-      COPY_DATA: false           # if true, data is copied from csv files into tables
-      CREATE_IDX: false          # if true, idx and materialized view are created
+      CREATE_TABLES: true       # if true, tables are dropped and created
+      COPY_DATA: true           # if true, data is copied from csv files into tables
+      CREATE_IDX: true          # if true, idx and materialized view are created
     depends_on:
       postgres:
         condition: service_healthy
-  mongo:
+  mongodb:
     image: mongo
     volumes:
-      - ./import/data:/data/
+      - ./mongo-data:/data/db
     env_file: [.env]
-    command:
-    MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
-    MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
       interval: 10s
@@ -42,6 +55,7 @@ services:
     env_file: [.env]
     depends_on:
       - postgres
+      - mongodb
     ports:
       - "3000:3000"
   duckdb:
