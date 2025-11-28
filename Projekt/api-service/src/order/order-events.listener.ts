@@ -32,7 +32,7 @@ export class OrderEventsListener implements OnModuleInit, OnModuleDestroy {
   onModuleInit() {
     const enabledConfig = this.configService.get<string>(
       'ORDERS_STREAM_ENABLED',
-      'true',
+      'false',
     );
     if (enabledConfig === 'false') {
       this.logger.log('Orders WebSocket stream disabled via configuration.');

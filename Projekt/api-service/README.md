@@ -96,3 +96,31 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 ## License
 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+
+## Parallel Order Test Script
+
+The helper scripts `scripts/parallel-order-test.sh` (Linux/macOS/WSL) and `scripts/parallel-order-test.bat` (Windows, wraps the PowerShell implementation) fire REST Route 2 (`POST /orders`) sequentially and in parallel so you can compare runtimes and confirm that concurrent inserts do not block each other.
+
+```bash
+# run with defaults (http://localhost:3000/orders, 2 requests, product "zfdoss")
+scripts/parallel-order-test.sh
+
+# customize API URL, number of requests and payload data
+API_URL=http://localhost:3000/orders \
+COUNT=5 \
+CUSTOMER_ID=42 \
+PRODUCT_ID=10 \
+BUYING_PRICE=29.99 \
+scripts/parallel-order-test.sh --mode parallel
+```
+
+```powershell
+# run on Windows (defaults use product "zfdoss" from the amzn dataset)
+scripts\parallel-order-test.bat
+
+# pass arguments/environment variables identically
+set MODE=parallel
+scripts\parallel-order-test.bat --count 5 --api-url http://localhost:3000/orders
+```
+
+Set `MODE=parallel` or `MODE=sequential` (or pass `--mode`) to run only one measurement. Always pick real foreign-key values (e.g. customer `1`, product `zfdoss` from `/import/data/amzn/products.csv`) to avoid constraint violations. The script reports how long each batch of requests took so you can confirm that the parallel run finishes much faster than the sequential one.

@@ -14,7 +14,7 @@ type Product {
 type OrderPosition {
   id: ID!
   quantity: Int!
-  buying_price: Int!
+  buying_price: Float!
   order: Order!
   product: Product
 }

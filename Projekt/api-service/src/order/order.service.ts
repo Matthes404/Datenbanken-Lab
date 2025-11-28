@@ -1,138 +1,76 @@
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Order } from '../entities/order.entity';
-import { OrderPosition } from '../entities/order-position.entity';
-import { Product } from '../entities/product.entity';
-import { Customer } from '../entities/customer.entity';
+import { Injectable, Inject } from '@nestjs/common'
 import {
-  GetOrdersQueryDto,
-  PaginatedOrders,
-} from './dto/get-orders-query.dto';
-import { CreateOrderDto } from './dto/create-order.dto';
-import { StreamOrderDto } from './dto/stream-order.dto';
+  ORDER_REPOSITORY,
+  IOrder,
+  IPaginatedOrders,
+} from '../repositories/interfaces/order.repository.interface'
+import type { IOrderRepository } from '../repositories/interfaces/order.repository.interface'
+import { PRODUCT_REPOSITORY } from '../repositories/interfaces/product.repository.interface'
+import type { IProductRepository } from '../repositories/interfaces/product.repository.interface'
+import { CreateOrderDto } from './dto/create-order.dto'
+import { StreamOrderDto } from './dto/stream-order.dto'
+import { GetOrdersQueryDto } from './dto/get-orders-query.dto'
 
 @Injectable()
 export class OrderService {
   constructor(
-    @InjectRepository(Order)
-    private readonly repo: Repository<Order>,
-    @InjectRepository(Product)
-    private readonly productRepo: Repository<Product>,
+    @Inject(ORDER_REPOSITORY)
+    private readonly orderRepo: IOrderRepository,
+    @Inject(PRODUCT_REPOSITORY)
+    private readonly productRepo: IProductRepository
   ) {}
 
-  async findAll(query: GetOrdersQueryDto): Promise<PaginatedOrders> {
-    const page = query.page ?? 1;
-    const pageSize = query.pageSize ?? 25;
-    const qb = this.repo
-      .createQueryBuilder('order')
-      .leftJoinAndSelect('order.customer', 'customer')
-      .leftJoinAndSelect('order.positions', 'position')
-      .leftJoinAndSelect('position.product', 'product');
-
-    if (query.customerName) {
-      qb.andWhere('LOWER(customer.name) LIKE LOWER(:customerName)', {
-        customerName: `%${query.customerName.toLowerCase()}%`,
-      });
-    }
-
-    if (query.orderDateFrom) {
-      qb.andWhere('order.order_date >= :orderDateFrom', {
-        orderDateFrom: query.orderDateFrom,
-      });
-    }
-
-    if (query.orderDateTo) {
-      qb.andWhere('order.order_date <= :orderDateTo', {
-        orderDateTo: query.orderDateTo,
-      });
-    }
-
-    qb.orderBy('order.order_date', 'DESC').addOrderBy('order.id', 'DESC');
-
-    const [data, total] = await qb
-      .take(pageSize)
-      .skip((page - 1) * pageSize)
-      .getManyAndCount();
-
-    return {
-      data,
-      meta: {
-        total,
-        page,
-        pageSize,
-        totalPages: pageSize === 0 ? 0 : Math.ceil(total / pageSize),
-      },
-    };
+  findAll(query: GetOrdersQueryDto): Promise<IPaginatedOrders> {
+    return this.orderRepo.findAll({
+      page: query.page,
+      pageSize: query.pageSize,
+      customerName: query.customerName,
+      orderDateFrom: query.orderDateFrom,
+      orderDateTo: query.orderDateTo,
+    })
   }
 
-  findOne(id: number) {
-    return this.repo.findOne({
-      where: { id },
-      relations: ['customer', 'positions', 'positions.product'],
-    });
+  findOne(id: string): Promise<IOrder | null> {
+    return this.orderRepo.findById(id)
   }
 
-  async create(dto: CreateOrderDto) {
-    // Ab hier Transaktion zum erstellen ".transaction..."
-    return this.repo.manager.transaction(async (manager) => {
-      const orderRepository = manager.getRepository(Order);
-      const positionRepository = manager.getRepository(OrderPosition);
-
-      const order = orderRepository.create({
-        order_date: new Date(dto.orderDate),
-        customer: { id: dto.customerId } as Customer,
-      });
-      const savedOrder = await orderRepository.save(order);
-
-      const positions = dto.positions.map((position) =>
-        positionRepository.create({
-          order: savedOrder,
-          quantity: position.quantity,
-          buying_price: position.buyingPrice,
-          product: { id: position.productId } as Product,
-        }),
-      );
-
-      await positionRepository.save(positions);
-
-      return orderRepository.findOne({
-        where: { id: savedOrder.id },
-        relations: ['customer', 'positions', 'positions.product'],
-      });
-    });
+  create(dto: CreateOrderDto): Promise<IOrder> {
+    return this.orderRepo.create({
+      order_date: new Date(dto.orderDate),
+      customer_id: dto.customerId.toString(),
+      positions: dto.positions.map(p => ({
+        product_id: p.productId,
+        quantity: p.quantity,
+        buying_price: p.buyingPrice,
+      })),
+    })
   }
 
-  async createFromStream(dto: StreamOrderDto) {
-    const positions = await Promise.all( // Promise.all sorgt dafür, dass alle Produkt-Lookups parallel laufen
+  async createFromStream(dto: StreamOrderDto): Promise<IOrder> {
+    const positions = await Promise.all(
       dto.positions.map(async (incoming) => {
-        const product = await this.productRepo.findOne({
-          where: { title: incoming.product_title },
-        });
+        const product = await this.productRepo.findByTitle(incoming.product_title)
         if (!product) {
           throw new Error(
-            `Stream order rejected: unknown product title "${incoming.product_title}"`,
-          );
+            `Stream order rejected: unknown product title "${incoming.product_title}"`
+          )
         }
         return {
-          productId: product.id,
+          product_id: product.id,
           quantity: incoming.quantity,
-          buyingPrice: Number(product.price),
-        };
-      }),
-    );
+          buying_price: product.price,
+        }
+      })
+    )
 
-    const createOrderDto: CreateOrderDto = {
-      orderDate: new Date().toISOString(),
-      customerId: dto.customer_id,
+    return this.orderRepo.create({
+      order_date: new Date(),
+      customer_id: dto.customer_id.toString(),
       positions,
-    };
-
-    return this.create(createOrderDto);
+    })
   }
 
-  async update(id: number, dto: Partial<Order>) {
-    await this.repo.update(id, dto);
-    return this.findOne(id);
+  async update(id: string, dto: Partial<{ order_date: Date }>): Promise<IOrder | null> {
+    return this.orderRepo.update(id, dto)
   }
 }
