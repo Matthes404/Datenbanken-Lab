@@ -3,6 +3,7 @@ import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm'
 import { MongooseModule } from '@nestjs/mongoose'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 
+
 // Entities (Postgres)
 import { Customer } from '../entities/customer.entity'
 import { Product } from '../entities/product.entity'
@@ -13,6 +14,7 @@ import { OrderPosition } from '../entities/order-position.entity'
 import { CustomerDocument, CustomerSchema } from '../schemas/customer.schema'
 import { ProductDocument, ProductSchema } from '../schemas/product.schema'
 import { OrderDocument, OrderSchema } from '../schemas/order.schema'
+import { CategoryStatsDocument, CategoryStatsSchema } from '../schemas/category-stats.schema'
 
 // Repository Interfaces
 import { PRODUCT_REPOSITORY } from '../repositories/interfaces/product.repository.interface'
@@ -50,6 +52,7 @@ export class DatabaseModule {
             { name: CustomerDocument.name, schema: CustomerSchema },
             { name: ProductDocument.name, schema: ProductSchema },
             { name: OrderDocument.name, schema: OrderSchema },
+            { name: CategoryStatsDocument.name, schema: CategoryStatsSchema },
           ]),
         ],
         providers: [

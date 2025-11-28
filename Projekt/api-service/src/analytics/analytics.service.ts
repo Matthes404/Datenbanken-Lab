@@ -12,4 +12,12 @@ export class AnalyticsService {
   getAnalytics() {
     return this.analyticsRepo.getCategoryStats()
   }
+
+  async refreshAnalytics() {
+    if (this.analyticsRepo.refreshCategoryStats) {
+      await this.analyticsRepo.refreshCategoryStats()
+      return { message: 'Analytics refreshed successfully' }
+    }
+    return { message: 'Refresh not supported for this database' }
+  }
 }

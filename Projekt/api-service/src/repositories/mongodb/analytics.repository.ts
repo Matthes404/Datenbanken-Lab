@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose'
 import { Model } from 'mongoose'
 import { OrderDocument, OrderDoc } from '../../schemas/order.schema'
 import { ProductDocument, ProductDoc } from '../../schemas/product.schema'
+import { CategoryStatsDocument, CategoryStatsDoc } from '../../schemas/category-stats.schema'
 import { ICategoryStats, IAnalyticsRepository } from '../interfaces/analytics.repository.interface'
 
 @Injectable()
@@ -11,10 +12,22 @@ export class MongoAnalyticsRepository implements IAnalyticsRepository {
     @InjectModel(OrderDocument.name)
     private readonly orderModel: Model<OrderDoc>,
     @InjectModel(ProductDocument.name)
-    private readonly productModel: Model<ProductDoc>
+    private readonly productModel: Model<ProductDoc>,
+    @InjectModel(CategoryStatsDocument.name)
+    private readonly statsModel: Model<CategoryStatsDoc>
   ) {}
 
   async getCategoryStats(): Promise<ICategoryStats[]> {
+    const stats = await this.statsModel.find().sort({ category: 1 }).exec()
+    return stats.map(s => ({
+      category: s.category,
+      products: s.products,
+      orders: s.orders,
+      revenue: s.revenue,
+    }))
+  }
+
+  async refreshCategoryStats(): Promise<void> {
     const result = await this.orderModel.aggregate([
       { $unwind: '$positions' },
       {
@@ -53,10 +66,16 @@ export class MongoAnalyticsRepository implements IAnalyticsRepository {
           orders: { $size: '$orders' },
           revenue: 1
         }
-      },
-      { $sort: { category: 1 } }
+      }
     ])
 
-    return result
+    // Clear and insert new stats
+    await this.statsModel.deleteMany({})
+    await this.statsModel.insertMany(
+      result.map(r => ({
+        ...r,
+        updated_at: new Date()
+      }))
+    )
   }
 }

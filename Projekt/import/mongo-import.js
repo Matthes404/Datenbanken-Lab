@@ -123,9 +123,61 @@ async function importData() {
     // Create indexes
     await db.collection('orders').createIndex({ customer_id: 1 })
     await db.collection('orders').createIndex({ order_date: -1 })
+    await db.collection('orders').createIndex({ 'positions.product_id': 1 })
     await db.collection('products').createIndex({ category: 1 })
     await db.collection('products').createIndex({ title: 1 })
     console.log('Created indexes')
+    
+    // Generate category stats (Materialized View equivalent)
+    console.log('Generating category stats...')
+    const stats = await db.collection('orders').aggregate([
+      { $unwind: '$positions' },
+      {
+        $lookup: {
+          from: 'products',
+          localField: 'positions.product_id',
+          foreignField: '_id',
+          as: 'product'
+        }
+      },
+      { $unwind: '$product' },
+      {
+        $group: {
+          _id: {
+            category: '$product.category',
+            order_id: '$_id',
+            product_id: '$product._id'
+          },
+          quantity: { $sum: '$positions.quantity' },
+          buying_price: { $first: '$positions.buying_price' }
+        }
+      },
+      {
+        $group: {
+          _id: '$_id.category',
+          products: { $addToSet: '$_id.product_id' },
+          orders: { $addToSet: '$_id.order_id' },
+          revenue: { $sum: { $multiply: ['$quantity', '$buying_price'] } }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          category: '$_id',
+          products: { $size: '$products' },
+          orders: { $size: '$orders' },
+          revenue: 1
+        }
+      }
+    ]).toArray()
+    
+    const statsWithTimestamp = stats.map(s => ({
+      ...s,
+      updated_at: new Date()
+    }))
+    
+    await db.collection('category_stats').insertMany(statsWithTimestamp)
+    console.log(`Generated ${stats.length} category stats`)
     
     console.log('Import completed successfully!')
     
