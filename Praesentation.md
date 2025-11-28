@@ -1,4 +1,4 @@
-# Lab 2: Migration zu MongoDB
+# Lab 3: Migration zu MongoDB
 
 ## Übersicht
 
