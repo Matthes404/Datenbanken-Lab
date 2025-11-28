@@ -1,15 +1,15 @@
-import { Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { Injectable, Inject } from '@nestjs/common'
+import { ANALYTICS_REPOSITORY } from '../repositories/interfaces/analytics.repository.interface'
+import type { IAnalyticsRepository } from '../repositories/interfaces/analytics.repository.interface'
 
 @Injectable()
 export class AnalyticsService {
-  constructor(private dataSource: DataSource) {}
+  constructor(
+    @Inject(ANALYTICS_REPOSITORY)
+    private readonly analyticsRepo: IAnalyticsRepository
+  ) {}
 
-  async getAnalytics() {
-    return this.dataSource.query(`
-      SELECT *
-      FROM mv_category_stats
-      ORDER BY category;
-    `);
+  getAnalytics() {
+    return this.analyticsRepo.getCategoryStats()
   }
 }
