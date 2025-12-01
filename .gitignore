@@ -43,7 +43,20 @@ temp/
 # Volume data & import folders
 import/data/
 postgres-data/
+mongo-data/
+neo4j-data/
+duckdb-data/
+
 docker-compose.override.yml
+
+# Neo4j system files
+data/neo4j/
+**/dbms/
+**/auth.ini
+
+# Mongo tmp/log
+**/.mongodb/
+*.log
 
 # Docker build artifacts
 *.pid

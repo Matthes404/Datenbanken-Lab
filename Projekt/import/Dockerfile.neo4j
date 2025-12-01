@@ -1,0 +1,11 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+RUN npm install neo4j-driver
+
+COPY neo4j-import.js .
+
+ENV NODE_OPTIONS=--max-old-space-size=6000
+
+CMD ["node", "neo4j-import.js"]

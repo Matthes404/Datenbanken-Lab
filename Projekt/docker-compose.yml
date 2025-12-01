@@ -12,14 +12,24 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
+  neo4j-import:
+    build:
+      context: ./import
+      dockerfile: Dockerfile.neo4j
+    env_file: [.env]
+    depends_on:
+      neo4j:
+        condition: service_healthy
+    volumes:
+      - ./import/data:/data
   import:
     build: import
     env_file: [.env]
     environment:
       SCENARIO:                 # if empty, value is taken from .env; possible values: abnb, amzn, spot, uber
-      CREATE_TABLES: true       # if true, tables are dropped and created
-      COPY_DATA: true           # if true, data is copied from csv files into tables
-      CREATE_IDX: true          # if true, idx and materialized view are created
+      CREATE_TABLES: false       # if true, tables are dropped and created
+      COPY_DATA: false           # if true, data is copied from csv files into tables
+      CREATE_IDX: false          # if true, idx and materialized view are created
     depends_on:
       postgres:
         condition: service_healthy
@@ -38,6 +48,22 @@ services:
       retries: 5
     ports:
       - "27017:27017"
+  neo4j:
+    image: neo4j:5
+    container_name: neo4j
+    environment:
+      NEO4J_AUTH: "${NEO4J_USER}/${NEO4J_PASSWORD}"
+    ports:
+      - "7474:7474"  # Browser UI
+      - "7687:7687"  # Bolt Protocol
+    volumes:
+      - ./data/neo4j:/data
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u $NEO4J_USER -p $NEO4J_PASSWORD 'RETURN 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   postgres:
     image: postgres
     volumes:
@@ -56,6 +82,7 @@ services:
     depends_on:
       - postgres
       - mongodb
+      - neo4j
     ports:
       - "3000:3000"
   duckdb:
