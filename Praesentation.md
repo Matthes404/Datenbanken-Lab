@@ -1,6 +1,20 @@
 # Lab 3: Migration zu MongoDB
 ---
 
+```
+src/
+├── database/
+│   └── database.module.ts       # Dynamischer DB-Wechsel
+├── repositories/
+│   ├── interfaces/              # Abstrakte Verträge
+│   ├── postgres/                # TypeORM Implementierung
+│   └── mongodb/                 # Mongoose Implementierung
+├── schemas/                     # MongoDB Schemas
+├── entities/                    # PostgreSQL Entities
+└── ...
+```
+
+
 ## 1. Datenmodell
 # MongoDB Collections
 
@@ -44,23 +58,13 @@
 | `revenue` | Number | Gesamtumsatz der Kategorie |
 | `updated_at` | Date | Zeitpunkt der letzten Berechnung |
 
-### Designentscheidungen
-
-| Aspekt | PostgreSQL | MongoDB | Begründung |
-|--------|------------|---------|------------|
-| **Order Positions** | Separate Tabelle mit FK | Eingebettet in Orders | Komposition - Positionen existieren nicht ohne Order |
-| **Customer ↔ Order** | FK in orders | Referenz via ObjectId | 1:n Beziehung, viele Orders pro Customer möglich |
-| **Product ↔ Position** | FK in order_positions | Referenz via ObjectId | Produkte werden von vielen Positionen referenziert |
-| **Analytics** | Materialized View | Eigene Collection | Vorberechnete Statistiken für schnelle Abfragen |
-
 ### Warum 3 statt 4 Collections?
 
 Die `order_positions` Tabelle wurde in die `orders` Collection **eingebettet**, weil:
 
 1. **Komposition**: Positionen gehören immer zu genau einer Bestellung
 2. **Gemeinsamer Zugriff**: Bestellungen werden fast immer mit ihren Positionen abgefragt
-3. **Atomare Updates**: Eine Bestellung inkl. Positionen kann atomar geschrieben werden
-4. **Performance**: Kein JOIN nötig - ein Dokument enthält alle Daten
+3. **Performance**: Kein JOIN nötig - ein Dokument enthält alle Daten
 
 ---
 
@@ -92,17 +96,6 @@ docker-compose exec mongodb mongosh -u admin -p secret --authenticationDatabase 
 docker-compose exec mongodb mongosh -u admin -p secret --authenticationDatabase admin ndbk --eval "db.category_stats.findOne()"
 ```
 
-### Indizes anzeigen
-
-```bash
-docker-compose exec mongodb mongosh -u admin -p secret --authenticationDatabase admin ndbk --eval "
-  db.getCollectionNames().forEach(c => {
-    print('--- ' + c + ' ---');
-    printjson(db[c].getIndexes())
-  })
-"
-```
-
 ---
 
 ## 3. Import der Daten
@@ -123,7 +116,6 @@ docker-compose run --rm mongo-import
 4. Positionen einbetten: order_positions werden direkt in orders eingebettet
 5. Indizes erstellen
 6. Analytics generieren: category_stats Collection vorberechnen
-
 ---
 
 ## 4. API mit Datenbankwechsel
@@ -156,23 +148,6 @@ curl http://localhost:3000/analytics
 
 # Analytics neu berechnen (nur MongoDB)
 curl -X POST http://localhost:3000/analytics/refresh
-```
-
----
-
-## 5. Projektstruktur
-
-```
-src/
-├── database/
-│   └── database.module.ts       # Dynamischer DB-Wechsel
-├── repositories/
-│   ├── interfaces/              # Abstrakte Verträge
-│   ├── postgres/                # TypeORM Implementierung
-│   └── mongodb/                 # Mongoose Implementierung
-├── schemas/                     # MongoDB Schemas
-├── entities/                    # PostgreSQL Entities
-└── ...
 ```
 
 ---
