@@ -68,18 +68,6 @@ Die `order_positions` Tabelle wurde in die `orders` Collection **eingebettet**, 
 
 ---
 
-## 2. Datenmodell anzeigen
-
-### Collections und Dokumentanzahl
-
-```bash
-docker-compose exec mongodb mongosh -u admin -p secret --authenticationDatabase admin ndbk --eval "
-  db.getCollectionNames().forEach(c => {
-    print(c + ': ' + db[c].countDocuments() + ' documents')
-  })
-"
-```
-
 ### Beispieldokumente anzeigen
 
 ```bash
@@ -98,7 +86,7 @@ docker-compose exec mongodb mongosh -u admin -p secret --authenticationDatabase 
 
 ---
 
-## 3. Import der Daten
+## 2. Import der Daten
 
 ```bash
 # MongoDB starten
@@ -118,14 +106,14 @@ docker-compose run --rm mongo-import
 6. Analytics generieren: category_stats Collection vorberechnen
 ---
 
-## 4. API mit Datenbankwechsel
+## 3. API mit Datenbankwechsel
 
 ### Datenbank wechseln
 
 In `.env`:
 
 ```env
-DB_TYPE=postgres  # oder mongodb
+DB_TYPE=mongodb
 ```
 
 Dann:
@@ -141,7 +129,19 @@ docker-compose up -d --build api
 curl http://localhost:3000/orders
 
 # Einzelne Order
-curl http://localhost:3000/orders/{id}
+curl http://localhost:3000/orders/{order_id}
+
+# Neue Order erstellen
+curl -X POST http://localhost:3000/orders -H "Content-Type: application/json" -d "{\"orderDate\": \"2025-01-15T00:00:00Z\", \"customerId\": \"{customer_id}\", \"positions\": [{\"productId\": \"{product_id}\", \"quantity\": 2, \"buyingPrice\": 99.99}]}"
+
+# Einzelnes Produkt abrufen
+curl http://localhost:3000/products/{product_id}
+
+# Produkt aktualisieren
+curl -X PATCH http://localhost:3000/products/{product_id} -H "Content-Type: application/json" -d "{\"price\": 149.99, \"in_stock\": 50}"
+
+# Produkt löschen
+curl -X DELETE http://localhost:3000/products/{product_id}
 
 # Analytics
 curl http://localhost:3000/analytics
@@ -149,21 +149,6 @@ curl http://localhost:3000/analytics
 # Analytics neu berechnen (nur MongoDB)
 curl -X POST http://localhost:3000/analytics/refresh
 ```
-
----
-
-## 6. Befehle Übersicht
-
-| Aktion | Befehl |
-|--------|--------|
-| MongoDB starten | `docker-compose up -d mongodb` |
-| Daten importieren | `docker-compose run --rm mongo-import` |
-| API starten | `docker-compose up -d --build api` |
-| MongoDB Shell | `docker-compose exec mongodb mongosh -u admin -p secret --authenticationDatabase admin ndbk` |
-| Analytics refreshen | `curl -X POST http://localhost:3000/analytics/refresh` |
-
-Natürlich — hier ist **alles vollständig als saubere Markdown-Datei**, ohne zusätzliche Erklär- oder Systemtexte außenrum ✔
-→ Du kannst das **1:1 in deine Abgabe übernehmen**.
 
 ---
 
