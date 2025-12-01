@@ -138,10 +138,6 @@ import random
 import os
 import uuid
 
-# ======================================
-# 1) EINMALIGE DB-Verbindung & IDs Laden
-# ======================================
-
 PRODUCT_IDS = []
 CUSTOMER_IDS = []
 ORDER_IDS = []
@@ -168,11 +164,6 @@ def load_ids():
 
 
 load_ids()
-
-
-# ======================================
-# 2) Locust-Test-Klasse
-# ======================================
 
 class MyLoadUser(HttpUser):
     wait_time = between(1, 1)  # 1 req/s
