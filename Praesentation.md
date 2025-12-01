@@ -141,7 +141,19 @@ docker-compose up -d --build api
 curl http://localhost:3000/orders
 
 # Einzelne Order
-curl http://localhost:3000/orders/{id}
+curl http://localhost:3000/orders/{order_id}
+
+# Neue Order erstellen
+curl -X POST http://localhost:3000/orders -H "Content-Type: application/json" -d "{\"orderDate\": \"2025-01-15T00:00:00Z\", \"customerId\": \"{customer_id}\", \"positions\": [{\"productId\": \"{product_id}\", \"quantity\": 2, \"buyingPrice\": 99.99}]}"
+
+# Einzelnes Produkt abrufen
+curl http://localhost:3000/products/{product_id}
+
+# Produkt aktualisieren
+curl -X PATCH http://localhost:3000/products/{product_id} -H "Content-Type: application/json" -d "{\"price\": 149.99, \"in_stock\": 50}"
+
+# Produkt löschen
+curl -X DELETE http://localhost:3000/products/{product_id}
 
 # Analytics
 curl http://localhost:3000/analytics
