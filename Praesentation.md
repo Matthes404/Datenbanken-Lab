@@ -125,7 +125,7 @@ docker-compose run --rm mongo-import
 In `.env`:
 
 ```env
-DB_TYPE=postgres  # oder mongodb
+DB_TYPE=mongodb
 ```
 
 Dann:
