@@ -1,35 +1,62 @@
 # Lab 3: Migration zu MongoDB
-
-## Übersicht
-
-Dieses Projekt demonstriert die Migration einer relationalen PostgreSQL-Datenbank zu MongoDB, inklusive einer API die beide Datenbanken unterstützt.
-
 ---
 
+```
+src/
+├── database/
+│   └── database.module.ts       # Dynamischer DB-Wechsel
+├── repositories/
+│   ├── interfaces/              # Abstrakte Verträge
+│   ├── postgres/                # TypeORM Implementierung
+│   └── mongodb/                 # Mongoose Implementierung
+├── schemas/                     # MongoDB Schemas
+├── entities/                    # PostgreSQL Entities
+└── ...
+```
+
+
 ## 1. Datenmodell
+# MongoDB Collections
 
-### PostgreSQL (relational) - 4 Tabellen
+## Collection: `customers`
 
-- `customers` (id, name, gender)
-- `orders` (id, order_date, customer_id)
-- `order_positions` (id, order_id, product_id, quantity, buying_price)
-- `products` (id, title, category, price, in_stock)
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `_id` | ObjectId | Automatisch generierte ID |
+| `name` | String | Kundenname |
+| `gender` | String | Geschlecht ("m" oder "f") |
 
-### MongoDB (dokumentenorientiert) - 3 Collections
+## Collection: `products`
 
-- `customers` - Kundendaten
-- `products` - Produktdaten
-- `orders` - Bestellungen **mit eingebetteten Positionen**
-- `category_stats` - Vorberechnete Analytics (Materialized View Äquivalent)
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `_id` | ObjectId | Automatisch generierte ID |
+| `title` | String | Produktname |
+| `category` | String | Kategorie |
+| `price` | Number | Aktueller Preis |
+| `in_stock` | Number | Lagerbestand |
 
-### Designentscheidungen
+## Collection: `orders`
 
-| Aspekt | PostgreSQL | MongoDB | Begründung |
-|--------|------------|---------|------------|
-| **Order Positions** | Separate Tabelle mit FK | Eingebettet in Orders | Komposition - Positionen existieren nicht ohne Order |
-| **Customer ↔ Order** | FK in orders | Referenz via ObjectId | 1:n Beziehung, viele Orders pro Customer möglich |
-| **Product ↔ Position** | FK in order_positions | Referenz via ObjectId | Produkte werden von vielen Positionen referenziert |
-| **Analytics** | Materialized View | Eigene Collection | Vorberechnete Statistiken für schnelle Abfragen |
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `_id` | ObjectId | Automatisch generierte ID |
+| `customer_id` | ObjectId | Referenz auf customers Collection |
+| `order_date` | Date | Bestelldatum |
+| `positions` | Array | Eingebettete Bestellpositionen |
+| `positions[].product_id` | ObjectId | Referenz auf products Collection |
+| `positions[].quantity` | Number | Bestellmenge |
+| `positions[].buying_price` | Number | Preis zum Kaufzeitpunkt |
+
+## Collection: `category_stats`
+
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `category` | String | Produktkategorie |
+| `products` | Number | Anzahl Produkte in dieser Kategorie |
+| `orders` | Number | Anzahl Bestellungen mit Produkten dieser Kategorie |
+| `revenue` | Number | Gesamtumsatz der Kategorie |
+| `updated_at` | Date | Zeitpunkt der letzten Berechnung |
 
 ### Warum 3 statt 4 Collections?
 
@@ -37,8 +64,7 @@ Die `order_positions` Tabelle wurde in die `orders` Collection **eingebettet**, 
 
 1. **Komposition**: Positionen gehören immer zu genau einer Bestellung
 2. **Gemeinsamer Zugriff**: Bestellungen werden fast immer mit ihren Positionen abgefragt
-3. **Atomare Updates**: Eine Bestellung inkl. Positionen kann atomar geschrieben werden
-4. **Performance**: Kein JOIN nötig - ein Dokument enthält alle Daten
+3. **Performance**: Kein JOIN nötig - ein Dokument enthält alle Daten
 
 ---
 
@@ -70,17 +96,6 @@ docker-compose exec mongodb mongosh -u admin -p secret --authenticationDatabase 
 docker-compose exec mongodb mongosh -u admin -p secret --authenticationDatabase admin ndbk --eval "db.category_stats.findOne()"
 ```
 
-### Indizes anzeigen
-
-```bash
-docker-compose exec mongodb mongosh -u admin -p secret --authenticationDatabase admin ndbk --eval "
-  db.getCollectionNames().forEach(c => {
-    print('--- ' + c + ' ---');
-    printjson(db[c].getIndexes())
-  })
-"
-```
-
 ---
 
 ## 3. Import der Daten
@@ -101,7 +116,6 @@ docker-compose run --rm mongo-import
 4. Positionen einbetten: order_positions werden direkt in orders eingebettet
 5. Indizes erstellen
 6. Analytics generieren: category_stats Collection vorberechnen
-
 ---
 
 ## 4. API mit Datenbankwechsel
@@ -134,23 +148,6 @@ curl http://localhost:3000/analytics
 
 # Analytics neu berechnen (nur MongoDB)
 curl -X POST http://localhost:3000/analytics/refresh
-```
-
----
-
-## 5. Projektstruktur
-
-```
-src/
-├── database/
-│   └── database.module.ts       # Dynamischer DB-Wechsel
-├── repositories/
-│   ├── interfaces/              # Abstrakte Verträge
-│   ├── postgres/                # TypeORM Implementierung
-│   └── mongodb/                 # Mongoose Implementierung
-├── schemas/                     # MongoDB Schemas
-├── entities/                    # PostgreSQL Entities
-└── ...
 ```
 
 ---
