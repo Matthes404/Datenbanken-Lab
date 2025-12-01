@@ -1,4 +1,3 @@
-// src/repositories/neo4j/order.repository.ts
 import { Inject, Injectable } from '@nestjs/common'
 import neo4j, { Driver } from 'neo4j-driver'
 import {
@@ -18,11 +17,24 @@ export class Neo4jOrderRepository implements IOrderRepository {
     private readonly driver: Driver,
   ) {}
 
-  // Neo4j-Record -> IOrder
+  // Neo4j-Node -> IProduct
+  private nodeToProduct(pNode: any | null | undefined): IProduct | undefined {
+    if (!pNode) return undefined
+    const p = pNode.properties
+    return {
+      id: p.id,
+      title: p.title,
+      category: p.category,
+      price: Number(p.price),
+      in_stock: Number(p.in_stock),
+    }
+  }
+
+    // Neo4j-Record -> IOrder
   private recordToOrder(rec: any): IOrder {
     const oNode = rec.get('o')
     const cNode = rec.get('c')
-    const positionsRaw = rec.get('positions') || []
+    const positionsRaw = (rec.get('positions') || []) as any[]
 
     const oProps = oNode.properties
     const cProps = cNode?.properties
@@ -32,27 +44,30 @@ export class Neo4jOrderRepository implements IOrderRepository {
         ? new Date(String(oProps.order_date))
         : new Date()
 
-    const positions: IOrderPosition[] = positionsRaw.map((entry: any) => {
-      const pNode = entry.product
-      const product: IProduct | undefined = pNode
-        ? {
-            id: pNode.properties.id,
-            title: pNode.properties.title,
-            category: pNode.properties.category,
-            price: Number(pNode.properties.price),
-            in_stock: Number(pNode.properties.in_stock),
-          }
-        : undefined
+    const positions: IOrderPosition[] = positionsRaw
+      .filter((entry) => !!entry)
+      .map((entry) => {
+        const pNode = entry.product
+        const product: IProduct | undefined = pNode
+          ? {
+              id: pNode.properties.id,
+              title: pNode.properties.title,
+              category: pNode.properties.category,
+              price: Number(pNode.properties.price),
+              in_stock: Number(pNode.properties.in_stock),
+            }
+          : undefined
 
-      return {
-        product_id: pNode?.properties.id,
-        quantity: Number(entry.quantity),
-        buying_price: Number(entry.buying_price),
-        product,
-      }
-    })
+        return {
+          product_id: pNode?.properties.id,
+          quantity: Number(entry.quantity),
+          buying_price: Number(entry.buying_price),
+          product,
+        }
+      })
 
-    return {
+    // Basis-Objekt entsprechend IOrder
+    const base: any = {
       id: String(oProps.id),
       customer_id: cProps?.id?.toString() ?? '',
       customer_name: cProps?.name,
@@ -60,116 +75,104 @@ export class Neo4jOrderRepository implements IOrderRepository {
       order_date,
       positions,
     }
+
+    // verschachteltes customer-Objekt für GraphQL
+    if (cProps) {
+      base.customer = {
+        id: String(cProps.id),
+        name: cProps.name,
+        gender: cProps.gender,
+      }
+    }
+
+    return base as IOrder
   }
+
 
   async findAll(query: IOrderQuery): Promise<IPaginatedOrders> {
-  const session = this.driver.session()
+    const session = this.driver.session()
 
-  const page = query.page ?? 1
-  const pageSize = query.pageSize ?? 25
+    const page = query.page ?? 1
+    const pageSize = query.pageSize ?? 25
 
-  const limit = Math.max(0, Math.floor(pageSize))
-  const skip = Math.max(0, Math.floor((page - 1) * pageSize))
+    const limit = Math.max(0, Math.floor(pageSize))
+    const skip = Math.max(0, Math.floor((page - 1) * pageSize))
 
-  try {
-    const countRes = await session.run(
-      `
-      MATCH (o:Order)
-      OPTIONAL MATCH (c:Customer)-[:PLACED]->(o)
-      WHERE
-        ($customerName IS NULL OR toLower(c.name) CONTAINS toLower($customerName)) AND
-        ($orderDateFrom IS NULL OR o.order_date >= $orderDateFrom) AND
-        ($orderDateTo   IS NULL OR o.order_date <= $orderDateTo)
-      RETURN count(DISTINCT o) AS total
-      `,
-      {
-        customerName: query.customerName ?? null,
-        orderDateFrom: query.orderDateFrom ?? null,
-        orderDateTo: query.orderDateTo ?? null,
-      },
-    )
+    try {
+      // Anzahl
+      const countRes = await session.run(
+        `
+        MATCH (o:Order)
+        OPTIONAL MATCH (c:Customer)-[:PLACED]->(o)
+        WHERE
+          ($customerName IS NULL OR toLower(c.name) CONTAINS toLower($customerName)) AND
+          ($orderDateFrom IS NULL OR o.order_date >= $orderDateFrom) AND
+          ($orderDateTo   IS NULL OR o.order_date <= $orderDateTo)
+        RETURN count(DISTINCT o) AS total
+        `,
+        {
+          customerName: query.customerName ?? null,
+          orderDateFrom: query.orderDateFrom ?? null,
+          orderDateTo: query.orderDateTo ?? null,
+        },
+      )
 
-    const total = countRes.records[0].get('total').toNumber()
+      const total = countRes.records[0].get('total').toNumber()
 
-    const res = await session.run(
-      `
-      MATCH (o:Order)
-      OPTIONAL MATCH (c:Customer)-[:PLACED]->(o)
-      WHERE
-        ($customerName IS NULL OR toLower(c.name) CONTAINS toLower($customerName)) AND
-        ($orderDateFrom IS NULL OR o.order_date >= $orderDateFrom) AND
-        ($orderDateTo   IS NULL OR o.order_date <= $orderDateTo)
-      OPTIONAL MATCH (o)-[r:CONTAINS]->(p:Product)
-      WITH o, c, collect({
-        id: r.id,
-        product_id: p.id,
-        quantity: r.quantity,
-        buying_price: r.buying_price,
-        product: p
-      }) AS positions
-      ORDER BY o.order_date DESC, o.id DESC
-      SKIP $skip
-      LIMIT $limit
-      RETURN o, c, positions
-      `,
-      {
-        customerName: query.customerName ?? null,
-        orderDateFrom: query.orderDateFrom ?? null,
-        orderDateTo: query.orderDateTo ?? null,
-        skip: neo4j.int(skip),
-        limit: neo4j.int(limit),
-      },
-    )
+      // Daten
+      const res = await session.run(
+        `
+        MATCH (o:Order)
+        OPTIONAL MATCH (c:Customer)-[:PLACED]->(o)
+        WHERE
+          ($customerName IS NULL OR toLower(c.name) CONTAINS toLower($customerName)) AND
+          ($orderDateFrom IS NULL OR o.order_date >= $orderDateFrom) AND
+          ($orderDateTo   IS NULL OR o.order_date <= $orderDateTo)
+        OPTIONAL MATCH (o)-[r:CONTAINS]->(p:Product)
+        WITH o, c, collect({
+          quantity: r.quantity,
+          buying_price: r.buying_price,
+          product: p
+        }) AS positions
+        ORDER BY o.order_date DESC, o.id DESC
+        SKIP $skip
+        LIMIT $limit
+        RETURN o, c, positions
+        `,
+        {
+          customerName: query.customerName ?? null,
+          orderDateFrom: query.orderDateFrom ?? null,
+          orderDateTo: query.orderDateTo ?? null,
+          skip: neo4j.int(skip),
+          limit: neo4j.int(limit),
+        },
+      )
 
-    const orders: IOrder[] = res.records.map((record) => {
-      const o = record.get('o').properties
-      const c = record.get('c')?.properties
-      const positions = record.get('positions') as any[]
+      const orders: IOrder[] = res.records.map((record) =>
+        this.recordToOrder(record),
+      )
 
       return {
-        id: o.id.toString(),
-        customer_id: c?.id?.toString(),
-        customer_name: c?.name,
-        customer_gender: c?.gender,
-        order_date: new Date(o.order_date),
-        positions: positions.map((p) => ({
-          product_id: p.product_id,
-          quantity: p.quantity,
-          buying_price: p.buying_price,
-          product: p.product
-            ? {
-                id: p.product.id,
-                title: p.product.title,
-                category: p.product.category,
-                price: p.product.price,
-                in_stock: p.product.in_stock,
-              }
-            : undefined,
-        })),
+        data: orders,
+        meta: {
+          total,
+          page,
+          pageSize,
+          totalPages: pageSize === 0 ? 0 : Math.ceil(total / pageSize),
+        },
       }
-    })
-
-    return {
-      data: orders,
-      meta: {
-        total,
-        page,
-        pageSize,
-        totalPages: pageSize === 0 ? 0 : Math.ceil(total / pageSize),
-      },
+    } finally {
+      await session.close()
     }
-  } finally {
-    await session.close()
   }
-}
-
 
   async findById(id: string): Promise<IOrder | null> {
     const session = this.driver.session()
     try {
       const res = await session.run(
         `
-        MATCH (c:Customer)-[:PLACED]->(o:Order {id: $id})
+        MATCH (c:Customer)-[:PLACED]->(o:Order)
+        WHERE toString(o.id) = $id
         OPTIONAL MATCH (o)-[r:CONTAINS]->(p:Product)
         WITH o, c,
              collect({
@@ -193,7 +196,9 @@ export class Neo4jOrderRepository implements IOrderRepository {
     try {
       const res = await session.run(
         `
-        MATCH (c:Customer {id: $customerId})-[:PLACED]->(o:Order)
+        MATCH (c:Customer)
+        WHERE toString(c.id) = $customerId
+        MATCH (c)-[:PLACED]->(o:Order)
         OPTIONAL MATCH (o)-[r:CONTAINS]->(p:Product)
         WITH o, c,
              collect({
@@ -206,7 +211,7 @@ export class Neo4jOrderRepository implements IOrderRepository {
         `,
         { customerId },
       )
-      return res.records.map(r => this.recordToOrder(r))
+      return res.records.map((r) => this.recordToOrder(r))
     } finally {
       await session.close()
     }
@@ -216,10 +221,12 @@ export class Neo4jOrderRepository implements IOrderRepository {
     const session = this.driver.session()
     const tx = session.beginTransaction()
     try {
-      const idRes = await tx.run(`
+      const idRes = await tx.run(
+        `
         MATCH (o:Order)
         RETURN toString(coalesce(max(toInteger(o.id)), 0) + 1) AS nextId
-      `)
+        `,
+      )
       const nextId = idRes.records[0].get('nextId')
 
       await tx.run(
@@ -258,7 +265,7 @@ export class Neo4jOrderRepository implements IOrderRepository {
 
       await tx.commit()
 
-      return (await this.findById(nextId)) as IOrder
+      return (await this.findById(String(nextId))) as IOrder
     } catch (e) {
       await tx.rollback()
       throw e
@@ -277,7 +284,8 @@ export class Neo4jOrderRepository implements IOrderRepository {
 
       const res = await session.run(
         `
-        MATCH (o:Order {id: $id})
+        MATCH (o:Order)
+        WHERE toString(o.id) = $id
         SET o += $data
         WITH o
         MATCH (c:Customer)-[:PLACED]->(o)
@@ -305,7 +313,8 @@ export class Neo4jOrderRepository implements IOrderRepository {
     try {
       const res = await session.run(
         `
-        MATCH (o:Order {id: $id})
+        MATCH (o:Order)
+        WHERE toString(o.id) = $id
         WITH o, count(o) AS c
         DETACH DELETE o
         RETURN c AS deleted

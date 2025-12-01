@@ -164,3 +164,182 @@ src/
 | API starten | `docker-compose up -d --build api` |
 | MongoDB Shell | `docker-compose exec mongodb mongosh -u admin -p secret --authenticationDatabase admin ndbk` |
 | Analytics refreshen | `curl -X POST http://localhost:3000/analytics/refresh` |
+
+Natürlich — hier ist **alles vollständig als saubere Markdown-Datei**, ohne zusätzliche Erklär- oder Systemtexte außenrum ✔
+→ Du kannst das **1:1 in deine Abgabe übernehmen**.
+
+---
+
+# Lab 3: Migration zu Neo4j
+## 1. Datenmodell (relational → graphbasiert)
+
+### Relationales Modell
+
+| Tabelle         | Beschreibung      |
+| --------------- | ----------------- |
+| customers       | Kundendaten       |
+| products        | Produktdaten      |
+| orders          | Bestellungen      |
+| order_positions | Bestellpositionen |
+
+### Neo4j Graph-Modell
+
+| Knoten (Nodes)  | Eigenschaften                        |
+| --------------- | ------------------------------------ |
+| `Customer`      | id, name, gender                     |
+| `Order`         | id, order_date                       |
+| `Product`       | id, title, category, price, in_stock |
+| `CategoryStats` | category, products, orders, revenue  |
+
+| Beziehung (Edges)                  | Bedeutung             |
+| ---------------------------------- | --------------------- |
+| `(:Customer)-[:PLACED]->(:Order)`  | Kunde bestellt Order  |
+| `(:Order)-[:CONTAINS]->(:Product)` | Order enthält Produkt |
+
+---
+
+## 2. Datenimport
+
+Import aus CSV nur, wenn Neo4j noch leer ist:
+
+```bash
+docker compose run --rm neo4j-import
+```
+
+CSV-Quelle:
+
+```
+/data/amzn/
+```
+
+### Ablauf im Importer
+
+| Schritt                    | Ergebnis                             |
+| -------------------------- | ------------------------------------ |
+| CSVs einlesen              | Kunden, Produkte, Orders, Positionen |
+| Knoten erzeugen            | Customer, Product, Order             |
+| Beziehungen erzeugen       | PLACED, CONTAINS                     |
+| CategoryStats vorberechnen | Performance-Optimierung              |
+
+## 3️. Vorberechnete Neo4j Analytics (Materialized View Konzept)
+
+Zur Performance-Optimierung wurde `CategoryStats` einmal vorher berechnet und als Knoten angelegt:
+
+#### Cypher:
+
+```cypher
+MATCH (c:Customer)-[:PLACED]->(o:Order)-[r:CONTAINS]->(p:Product)
+        WITH
+          p.category AS category,
+          count(DISTINCT p) AS productsCount,
+          count(DISTINCT o) AS ordersCount,
+          sum(toFloat(r.quantity) * toFloat(r.buying_price)) AS revenue
+        MERGE (cs:CategoryStats { category: category })
+        SET cs.products = productsCount,
+            cs.orders   = ordersCount,
+            cs.revenue  = revenue
+```
+
+
+---
+
+## 4️. API-Konfiguration und DB-Umschaltung
+
+`.env`:
+
+```env
+DB_TYPE=neo4j
+```
+
+Die API nutzt **Repositories**:
+
+| Interface              | Neo4j-Implementierung    |
+| ---------------------- | ------------------------ |
+| `IProductRepository`   | Neo4jProductRepository   |
+| `IOrderRepository`     | Neo4jOrderRepository     |
+| `IAnalyticsRepository` | Neo4jAnalyticsRepository |
+
+---
+
+## 5️. Endpunkte testen
+
+### REST
+
+```
+http://localhost:3000/orders
+http://localhost:3000/products/zfdoss
+http://localhost:3000/analytics
+http://localhost:3000/orders?page=1&pageSize=2&customerName=Tim
+```
+### PATCH,DELETE
+```
+PATCH http://localhost:3000/products/ctamai
+Content-Type: application/json
+
+{
+  "title": "New Title",
+  "price": 12,
+  "in_stock": 5
+}
+
+DELETE  http://localhost:3000/products/ctamai
+
+```
+
+### GraphQL Playground
+
+```graphql
+query {
+      order(id: ?) {
+      id
+    order_date
+    customer {
+      name
+    }
+    positions { 
+      quantity
+      buying_price
+      product {
+        title
+        category   
+      }
+    }
+  }
+}
+```
+
+---
+
+## 6️. Graph-Visualisierung
+
+```cypher
+MATCH (c:Customer)-[:PLACED]->(o:Order)-[:CONTAINS]->(p:Product)
+RETURN c, o, p LIMIT 50;
+```
+
+![image](graph.png)
+
+---
+
+## 7️. Lasttest (Locust)
+
+Failed leider noch Problem hat wahrscheinlich mit Memory Problem zu tun.
+
+
+
+---
+
+## 8️. Struktur Neo4j
+
+```
+src/
+├── database/
+│   └── database.module.ts
+├── repositories/
+│   ├── neo4j/
+│   │   ├── product.repository.ts
+│   │   ├── order.repository.ts
+│   │   ├── analytics.repository.ts
+│   │   └── index.ts
+└── ...
+```
