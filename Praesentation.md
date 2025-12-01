@@ -68,18 +68,6 @@ Die `order_positions` Tabelle wurde in die `orders` Collection **eingebettet**, 
 
 ---
 
-## 2. Datenmodell anzeigen
-
-### Collections und Dokumentanzahl
-
-```bash
-docker-compose exec mongodb mongosh -u admin -p secret --authenticationDatabase admin ndbk --eval "
-  db.getCollectionNames().forEach(c => {
-    print(c + ': ' + db[c].countDocuments() + ' documents')
-  })
-"
-```
-
 ### Beispieldokumente anzeigen
 
 ```bash
@@ -98,7 +86,7 @@ docker-compose exec mongodb mongosh -u admin -p secret --authenticationDatabase 
 
 ---
 
-## 3. Import der Daten
+## 2. Import der Daten
 
 ```bash
 # MongoDB starten
@@ -118,7 +106,7 @@ docker-compose run --rm mongo-import
 6. Analytics generieren: category_stats Collection vorberechnen
 ---
 
-## 4. API mit Datenbankwechsel
+## 3. API mit Datenbankwechsel
 
 ### Datenbank wechseln
 
