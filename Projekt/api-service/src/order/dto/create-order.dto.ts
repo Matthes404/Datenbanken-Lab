@@ -29,10 +29,8 @@ export class CreateOrderDto {
   @IsDateString()
   orderDate: string;
 
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  customerId: number;
+  @IsString()
+  customerId: string;
 
   @IsArray()
   @ArrayNotEmpty()
