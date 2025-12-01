@@ -1,26 +1,48 @@
 # Lab 3: Migration zu MongoDB
-
-## Übersicht
-
-Dieses Projekt demonstriert die Migration einer relationalen PostgreSQL-Datenbank zu MongoDB, inklusive einer API die beide Datenbanken unterstützt.
-
 ---
 
 ## 1. Datenmodell
+# MongoDB Collections
 
-### PostgreSQL (relational) - 4 Tabellen
+## Collection: `customers`
 
-- `customers` (id, name, gender)
-- `orders` (id, order_date, customer_id)
-- `order_positions` (id, order_id, product_id, quantity, buying_price)
-- `products` (id, title, category, price, in_stock)
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `_id` | ObjectId | Automatisch generierte ID |
+| `name` | String | Kundenname |
+| `gender` | String | Geschlecht ("m" oder "f") |
 
-### MongoDB (dokumentenorientiert) - 3 Collections
+## Collection: `products`
 
-- `customers` - Kundendaten
-- `products` - Produktdaten
-- `orders` - Bestellungen **mit eingebetteten Positionen**
-- `category_stats` - Vorberechnete Analytics (Materialized View Äquivalent)
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `_id` | ObjectId | Automatisch generierte ID |
+| `title` | String | Produktname |
+| `category` | String | Kategorie |
+| `price` | Number | Aktueller Preis |
+| `in_stock` | Number | Lagerbestand |
+
+## Collection: `orders`
+
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `_id` | ObjectId | Automatisch generierte ID |
+| `customer_id` | ObjectId | Referenz auf customers Collection |
+| `order_date` | Date | Bestelldatum |
+| `positions` | Array | Eingebettete Bestellpositionen |
+| `positions[].product_id` | ObjectId | Referenz auf products Collection |
+| `positions[].quantity` | Number | Bestellmenge |
+| `positions[].buying_price` | Number | Preis zum Kaufzeitpunkt |
+
+## Collection: `category_stats`
+
+| Feld | Typ | Beschreibung |
+|------|-----|--------------|
+| `category` | String | Produktkategorie |
+| `products` | Number | Anzahl Produkte in dieser Kategorie |
+| `orders` | Number | Anzahl Bestellungen mit Produkten dieser Kategorie |
+| `revenue` | Number | Gesamtumsatz der Kategorie |
+| `updated_at` | Date | Zeitpunkt der letzten Berechnung |
 
 ### Designentscheidungen
 
