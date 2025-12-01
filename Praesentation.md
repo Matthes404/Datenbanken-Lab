@@ -152,21 +152,6 @@ curl -X POST http://localhost:3000/analytics/refresh
 
 ---
 
-## 6. Befehle Übersicht
-
-| Aktion | Befehl |
-|--------|--------|
-| MongoDB starten | `docker-compose up -d mongodb` |
-| Daten importieren | `docker-compose run --rm mongo-import` |
-| API starten | `docker-compose up -d --build api` |
-| MongoDB Shell | `docker-compose exec mongodb mongosh -u admin -p secret --authenticationDatabase admin ndbk` |
-| Analytics refreshen | `curl -X POST http://localhost:3000/analytics/refresh` |
-
-Natürlich — hier ist **alles vollständig als saubere Markdown-Datei**, ohne zusätzliche Erklär- oder Systemtexte außenrum ✔
-→ Du kannst das **1:1 in deine Abgabe übernehmen**.
-
----
-
 # Lab 3: Migration zu Neo4j
 ## 1. Datenmodell (relational → graphbasiert)
 
