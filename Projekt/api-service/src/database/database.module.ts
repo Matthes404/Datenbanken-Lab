@@ -37,6 +37,9 @@ import { Neo4jProductRepository } from '../repositories/neo4j/product.repository
 import { Neo4jOrderRepository } from '../repositories/neo4j/order.repository'
 import { Neo4jAnalyticsRepository } from '../repositories/neo4j/analytics.repository'
 
+// Kafka
+import { ProductStats } from '../entities/product-stats.entity'
+
 @Module({})
 export class DatabaseModule {
   static forRoot(): DynamicModule {
@@ -122,13 +125,13 @@ export class DatabaseModule {
             username: config.get<string>('POSTGRES_USER'),
             password: config.get<string>('POSTGRES_PASSWORD'),
             database: config.get<string>('POSTGRES_DB'),
-            entities: [Customer, Product, Order, OrderPosition],
+            entities: [Customer, Product, Order, OrderPosition, ProductStats],
             synchronize: false,
             }
         },
         inject: [ConfigService],
         }),
-        TypeOrmModule.forFeature([Customer, Product, Order, OrderPosition]),
+        TypeOrmModule.forFeature([Customer, Product, Order, OrderPosition, ProductStats]),
       ],
       providers: [
         { provide: PRODUCT_REPOSITORY, useClass: PostgresProductRepository },

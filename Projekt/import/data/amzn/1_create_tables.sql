@@ -31,3 +31,10 @@ CREATE TABLE IF NOT EXISTS order_positions (
   CONSTRAINT fk_op_order_id FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
   CONSTRAINT fk_op_product_id FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 );
+
+CREATE TABLE IF NOT EXISTS product_stats (
+  product_id VARCHAR(10) PRIMARY KEY,
+  total_reviews INT DEFAULT 0,
+  avg_rating FLOAT DEFAULT 0,
+  last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
