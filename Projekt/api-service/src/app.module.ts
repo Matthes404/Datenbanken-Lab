@@ -9,6 +9,8 @@ import { OrderModule } from './order/order.module'
 import { ProductModule } from './product/product.module'
 import { AnalyticsModule } from './analytics/analytics.module'
 
+import { KafkaModule } from './kafka/kafka.module'
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -25,6 +27,7 @@ import { AnalyticsModule } from './analytics/analytics.module'
     OrderModule,
     ProductModule,
     AnalyticsModule,
+    KafkaModule,
   ],
 })
 export class AppModule {}
