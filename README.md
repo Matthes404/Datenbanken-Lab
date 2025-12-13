@@ -106,6 +106,6 @@ Dann die drei Queries aus Abschnitt 2 ausführen.
 
 ### PostgreSQL Stats prüfen
 
-'''bash
+~~~bash
 docker-compose exec postgres psql -U ndbk -d ndbk -c "SELECT * FROM product_stats;"
-'''
+~~~
