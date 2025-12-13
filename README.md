@@ -100,7 +100,6 @@ Dann die drei Queries aus Abschnitt 2 ausführen.
 | Service | URL |
 |---------|-----|
 | API | http://localhost:3000 |
-| Web-UI | http://localhost:8081 (oder index.html direkt öffnen) |
 | Kafka UI | http://localhost:8080 |
 | ksqlDB | http://localhost:8088 |
 
