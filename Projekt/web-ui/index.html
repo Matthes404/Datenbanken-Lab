@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AMZN Reviews Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .review-enter { animation: slideIn 0.3s ease-out; }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen p-8">
+  <div class="max-w-6xl mx-auto">
+    <h1 class="text-3xl font-bold mb-8 text-center">AMZN Reviews Dashboard</h1>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <!-- Chart Section -->
+      <div class="bg-gray-800 rounded-lg p-6">
+        <h2 class="text-xl font-semibold mb-4">Reviews pro Zeitfenster</h2>
+        <canvas id="chart"></canvas>
+      </div>
+      
+      <!-- Reviews List -->
+      <div class="bg-gray-800 rounded-lg p-6">
+        <h2 class="text-xl font-semibold mb-4">Live Reviews</h2>
+        <div id="reviews" class="space-y-2 max-h-96 overflow-y-auto">
+          <p class="text-gray-400">Warte auf Reviews...</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Stats Section -->
+    <div class="mt-8 bg-gray-800 rounded-lg p-6">
+      <h2 class="text-xl font-semibold mb-4">Aggregate Stats</h2>
+      <div id="stats" class="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <!-- Wird dynamisch gefüllt -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:3000';
+    const MAX_REVIEWS = 20;
+    const reviews = [];
+    const windowData = [];
+
+    // Chart Setup
+    const ctx = document.getElementById('chart').getContext('2d');
+    const chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'Avg Rating',
+          data: [],
+          backgroundColor: 'rgba(59, 130, 246, 0.5)',
+          borderColor: 'rgb(59, 130, 246)',
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: { beginAtZero: true, max: 5 }
+        }
+      }
+    });
+
+    // Reviews Stream
+    const reviewsSource = new EventSource(`${API_URL}/events/reviews`);
+    reviewsSource.onmessage = (e) => {
+      const review = JSON.parse(e.data);
+      reviews.unshift(review);
+      if (reviews.length > MAX_REVIEWS) reviews.pop();
+      renderReviews();
+    };
+
+    // Aggregates Stream
+    const aggSource = new EventSource(`${API_URL}/events/aggregates`);
+    aggSource.onmessage = (e) => {
+      const agg = JSON.parse(e.data);
+      updateChart(agg);
+      updateStats(agg);
+    };
+
+    function renderReviews() {
+    const container = document.getElementById('reviews');
+    container.innerHTML = reviews.map(r => `
+        <div class="review-enter bg-gray-700 rounded p-3">
+        <div class="flex justify-between">
+            <span class="font-semibold">${r.PRODUCT_ID || r.product_id}</span>
+            <span class="text-yellow-400">${'★'.repeat(r.RATING || r.rating)}${'☆'.repeat(5-(r.RATING || r.rating))}</span>
+        </div>
+        <p class="text-sm text-gray-300 mt-1">${r.REVIEW_TEXT || r.review_text}</p>
+        </div>
+    `).join('');
+    }
+
+    function updateChart(agg) {
+      const time = new Date(agg.WINDOW_END).toLocaleTimeString();
+      const productId = agg.PRODUCT_ID_VALUE || 'Unknown';
+      const label = `${productId} (${time})`;
+      
+      chart.data.labels.push(label);
+      chart.data.datasets[0].data.push(agg.AVG_RATING);
+      
+      // Keep last 10 windows
+      if (chart.data.labels.length > 10) {
+        chart.data.labels.shift();
+        chart.data.datasets[0].data.shift();
+      }
+      chart.update();
+    }
+
+    const productStats = {};
+    function updateStats(agg) {
+      const productId = agg.PRODUCT_ID_VALUE || 'Unknown';
+      productStats[productId] = {
+        count: (productStats[productId]?.count || 0) + agg.REVIEW_COUNT,
+        avg: agg.AVG_RATING
+      };
+      
+      const container = document.getElementById('stats');
+      container.innerHTML = Object.entries(productStats).map(([id, stats]) => `
+        <div class="bg-gray-700 rounded p-4 text-center">
+          <div class="text-lg font-bold">${id}</div>
+          <div class="text-2xl text-blue-400">${stats.avg.toFixed(1)} ★</div>
+          <div class="text-sm text-gray-400">${stats.count} reviews</div>
+        </div>
+      `).join('');
+    }
+  </script>
+</body>
+</html>
