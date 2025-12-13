@@ -15,7 +15,7 @@
 
 Definiert das Schema für eingehende Reviews aus dem Kafka Topic.
 
-'''sql
+~~~sql
 CREATE STREAM reviews_raw (
   product_id VARCHAR,
   rating INT,
@@ -25,26 +25,26 @@ CREATE STREAM reviews_raw (
   KAFKA_TOPIC='raw-reviews',
   VALUE_FORMAT='JSON'
 );
-'''
+~~~
 
 ### 2.2 Gefilterten Stream erstellen
 
 Filtert Reviews mit unangemessener Sprache. Schreibt automatisch in neues Topic `REVIEWS_FILTERED`.
 
-'''sql
+~~~sql
 CREATE STREAM reviews_filtered AS
   SELECT *
   FROM reviews_raw
   WHERE LCASE(review_text) NOT LIKE '%fuck%'
     AND LCASE(review_text) NOT LIKE '%shit%'
   EMIT CHANGES;
-'''
+~~~
 
 ### 2.3 Windowed Aggregation
 
 Gruppiert nach `product_id` in 30-Sekunden-Fenstern. Berechnet Anzahl und Durchschnittsbewertung. `EMIT FINAL` sendet nur nach Fenster-Abschluss.
 
-'''sql
+~~~sql
 CREATE TABLE reviews_aggregated 
   WITH (KAFKA_TOPIC='aggregated-reviews') AS
   SELECT 
@@ -58,7 +58,7 @@ CREATE TABLE reviews_aggregated
   WINDOW TUMBLING (SIZE 30 SECONDS)
   GROUP BY product_id
   EMIT FINAL;
-'''
+~~~
 
 ## 3. API Endpoints
 
@@ -71,27 +71,27 @@ CREATE TABLE reviews_aggregated
 
 ### Beispiel EventSource (JavaScript)
 
-'''javascript
+~~~javascript
 const reviews = new EventSource('http://localhost:3000/events/reviews');
 reviews.onmessage = (e) => {
   const data = JSON.parse(e.data);
   console.log(data);
 };
-'''
+~~~
 
 ## 4. Setup / Demo
 
 ### Alle Services starten
 
-'''bash
+~~~bash
 docker-compose up -d kafka ksqldb kafka-ui kafka-producer api
-'''
+~~~
 
 ### ksqlDB Queries einrichten
 
-'''bash
+~~~bash
 docker-compose exec ksqldb ksql http://localhost:8088
-'''
+~~~
 
 Dann die drei Queries aus Abschnitt 2 ausführen.
 
