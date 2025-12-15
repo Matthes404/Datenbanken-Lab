@@ -42,7 +42,7 @@ CREATE STREAM reviews_filtered AS
 
 ### 2.3 Windowed Aggregation
 
-Gruppiert nach `product_id` in 30-Sekunden-Fenstern. Berechnet Anzahl und Durchschnittsbewertung. `EMIT FINAL` sendet nur nach Fenster-Abschluss.
+Gruppiert nach `product_id` in 30-Sekunden-Fenstern. Berechnet Anzahl und Durchschnittsbewertung.
 
 ~~~sql
 CREATE TABLE reviews_aggregated 
