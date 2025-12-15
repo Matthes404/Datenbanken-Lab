@@ -4,7 +4,7 @@
 
 | Service | Image | Zweck |
 |---------|-------|-------|
-| `kafka` | apache/kafka:3.7.0 | Message Broker (KRaft Mode, kein Zookeeper) |
+| `kafka` | apache/kafka:3.7.0 | Message Broker|
 | `ksqldb` | confluentinc/ksqldb-server:0.29.0 | Stream Processing Engine |
 | `kafka-ui` | provectuslabs/kafka-ui | Debug UI für Topics (optional) |
 | `kafka-producer` | Custom Node.js | Mock-Daten Producer |
