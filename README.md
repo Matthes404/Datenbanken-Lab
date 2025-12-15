@@ -99,9 +99,11 @@ Dann die drei Queries aus Abschnitt 2 ausführen.
 
 | Service | URL |
 |---------|-----|
-| API | http://localhost:3000 |
+| API Reviews | http://localhost:3000/events/reviews |
+| API Aggregates | http://localhost:3000/events/aggregates |
 | Kafka UI | http://localhost:8080 |
-| ksqlDB | http://localhost:8088 |
+| ksqlDB | http://localhost:8088/ |
+
 
 ### PostgreSQL Stats prüfen
 
