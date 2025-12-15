@@ -57,7 +57,7 @@ CREATE TABLE reviews_aggregated
   FROM reviews_filtered
   WINDOW TUMBLING (SIZE 30 SECONDS)
   GROUP BY product_id
-  EMIT FINAL;
+  EMIT FINAL; <--- Am Ende des Zeitfensters (vs. EMIT CHANGES;)
 ~~~
 
 ## 3. API Endpoints
