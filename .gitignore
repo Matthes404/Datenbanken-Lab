@@ -101,3 +101,7 @@ src/schema.gql
 
 # Local scripts / dev tools
 scripts/local/
+
+# data
+Projekt/import/data/amzn/order_positions.csv
+Projekt/data/neo4j/
